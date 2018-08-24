@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width =device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable = 0" />
+  <title>猜电影</title>
+</head>
+<style>
+  *{
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-decoration: none
+  }
+  html, body{
+    width: 100%;
+    height: 100%;
+  }
+  .cover{
+    width: 100% ;
+    text-align: center;
+  }
+  #btn{
+    border: 1px solid #00b600;
+    padding: .4rem;
+    border-radius: 5px;
+    margin-top: 1.5rem;
+    background: #fff;
+    color: #00b600;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  .list{
+    box-sizing: border-box;
+    padding: 1rem .5rem;
+    width: 100%;
+    overflow: hidden;
+  }
+  .list>.item {
+    width: 33.3333%;
+    height: 10rem;
+    box-sizing: border-box;
+    padding: .5rem .2rem;
+    float: left;
+  }
+
+  .list>.item>a{
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .list>.item>a>.cover{
+    width: 100%;
+    height: 7rem;
+  }
+  .list>.item>a>.cover>img{
+    display: block;
+    width: 100%;
+    height: 6.5rem;
+  }
+  .list>.item>a>.info>h3{
+    text-align: center;
+    font-size: .6rem;
+    color: #494949;
+  }
+  .list>.item>a>.info>.rank{
+    text-align: center;
+    font-size: .6rem;
+    color: #9b9b9b;
+  }
+  .page{
+    box-sizing: border-box;
+    padding: 1rem .5rem;
+    width: 100%;
+  }
+   .page>.info{
+    width: 100%;
+    height: 7.6rem;
+  }
+   .page>.info>.right{
+    float: right;
+    width: 35%;
+  }
+   .page>.info>.right>a{
+    display: block;
+    width: 100%;
+  }
+   .page>.info>.right>a>img{
+    display: block;
+    width: 100%;
+    height: 7.6rem
+  }
+   .page>.info>.left{
+    float: left;
+    width: 56%;
+  }
+   .page>.info>.left>p{
+    font-size: .7rem;
+    color: #494949;
+  }
+   .page>.info>.left>.rating{
+    margin: .2rem 0 .8rem 0;
+  }
+   .page>.info>.left>.meta{
+    font-size: .6rem;
+    line-height: 1.1rem;
+  }
+   .page>.info>.left>.rating>span{
+    color: lightgreen;
+    margin: .2rem 0 .8rem 0;
+  }
+   .page>.info>.left>.rating>.ratingNum{
+    margin-left: .5rem;
+    color: #aaa;
+  }
+</style>
+<body>
+  <div class="cover">
+    <button id="btn">点击开始录音</button>
+  </div>
+  <ul class="list">
+  </ul>
+  <script type="text/javascript" src="http://res.wx.qq.com/open/js/jweixin-1.2.0.js"></script>
+  <script src="https://cdn.bootcss.com/zepto/1.0rc1/zepto.min.js"></script>
+  <script type="text/javascript" src="./js/rem.js"></script>
+  <script>
+      $(function (){
+          wx.config({
+              debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+              appId: 'wx9d108e475a03a979', // 必填，公众号的唯一标识
+              timestamp: '<%= timestamp %>', // 必填，生成签名的时间戳
+              nonceStr: '<%= noncestr %>', // 必填，生成签名的随机串
+              signature: '<%= signature %>',// 必填，签名
+              jsApiList: [
+                  'onMenuShareQZone',
+                  'onMenuShareQQ',
+                  'startRecord',
+                  'stopRecord',
+                  'translateVoice'
+              ] // 必填，需要使用的JS接口列表
+          });
+
+          let isRecord = false;
+          //定义标志符
+          $("#btn").tap(function (){
+              if(isRecord){
+                  //监听录音接口
+                  wx.stopRecord({
+                      success: function (res) {
+                          var localId = res.localId;
+                          //识别语音
+                          wx.translateVoice({
+                              localId: localId, // 需要识别的音频的本地Id，由录音相关接口获得
+                              isShowProgressTips: 1, // 默认为1，显示进度提示
+                              success: function (res) {
+                                  alert(res.translateResult); // 语音识别的结果
+                                  //返回一个语音识别后电影结果
+                                  //https://api.douban.com//v2/movie/search?q=越狱
+                                  var url = 'https://api.douban.com/v2/movie/search?q=' + res.translateResult + '&callback=?'
+                                  $.getJSON(url, function (data) {
+                                      var subjects = data.subjects;
+                                      let html = '';
+                                      subjects.forEach(function (item) {
+                                          html += " <li class='item'>" +
+                                              "      <a href='"+item.alt+"'>" +
+                                              "        <div class='cover'>" +
+                                              "          <img src='"+item.images.small+"' alt= '"+item.title+"' data-x='2000' data-y='2963' class='img-show' style='width: 100%;'>" +
+                                              "        </div>" +
+                                              "        <div class='info'>" +
+                                              "          <h3>"+item.title+"</h3>" +
+                                              "          <p class='rank'>" +
+                                              "            <span>评分:</span>" +
+                                              "            <span class='rating'>"+item.rating+"</span>" +
+                                              "          </p>" +
+                                              "        </div>" +
+                                              "      </a>" +
+                                              "    </li>"
+                                      })
+                                      $('.list').html(html);
+
+                                      //分享到QQ
+                                      wx.onMenuShareQQ({
+                                          title: subjects[0].title, // 分享标题
+                                          desc: '评分：' + subjects[0].rating.average, //分享描述
+                                          link: subjects[0].alt, // 分享链接
+                                          imgUrl:subjects[0].images.small, //分享图标
+                                          success: function () {
+                                              // 用户确认分享后执行的回调函数
+                                              alert("分享成功了~~")
+                                          },
+                                          cancel: function () {
+                                              // 用户取消分享后执行的回调函数
+                                              alert("分享失败了~~")
+                                          }
+                                      });
+                                      //分享到QQ空间
+                                      wx.onMenuShareQZone({
+                                          title:subjects[0].title, // 分享标题
+                                          desc:'评分：' + subjects[0].rating.average, // 分享描述
+                                          link:subjects[0].alt, // 分享链接
+                                          imgUrl:subjects[0].images.small, // 分享图标
+                                          success: function () {
+                                              // 用户确认分享后执行的回调函数
+                                              alert("成功分享到QQ空间")
+                                          },
+                                          cancel: function () {
+                                              // 用户取消分享后执行的回调函数
+                                              alert("分享到QQ空间失败")
+                                          }
+                                      });
+
+                                  })
+                                  isRecord = false;
+                              }
+                          });
+                      }
+                  });
+              }else{
+                  //开始录音
+                  wx.startRecord();
+                  isRecord = true;
+              }
+          })
+      })
+  </script>
+
+</body>
+</html>

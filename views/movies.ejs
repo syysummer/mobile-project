@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link href="https://cdn.bootcss.com/dplayer/1.22.2/DPlayer.min.css" rel="stylesheet">
+    <style>
+        .navbar {
+            margin: 0 -15px;
+        }
+
+        .navbar .btn {
+            color: #fff;
+            background-color: transparent;
+            background-image: none;
+            border-color: #fff;
+        }
+
+        .card .card-header .btn{
+            text-decoration:none;
+            color:#666;
+            padding-left:0px;
+            padding-right:0px;
+        }
+        .card-body .list-group .list-group-item{
+            padding-left:0px;
+            padding-right:0px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <nav class="navbar navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">菜鸟预告片</a>
+        <form class="form-inline my-2 my-lg-0" action="/search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </nav>
+    <!--http://pb81qqv5e.bkt.clouddn.com/ 七牛云外链接-->
+    <div class="row">
+        <% for(let i = 0; i < movies.length;i++){%>
+        <div class="card-group">
+            <div class="card">
+                <img class="card-img-top"
+                     src="http://pb81qqv5e.bkt.clouddn.com/<%= movies[i].posterKey %>"
+                     data-video= "http://pb81qqv5e.bkt.clouddn.com/<%= movies[i].videoKey %>"
+                     data-cover = "http://pb81qqv5e.bkt.clouddn.com/<%= movies[i].coverKey %>"
+                     data-id = "<%= movies[i].doubanId %>" alt="我不是药神图片">
+                <div class="card-body">
+                    <h5 class="card-title"><%= movies[i].title %></h5>
+                    <p class="card-text"><%= movies[i].summary %></p>
+                </div>
+                <!--设置将导演演员等信息进行隐藏-->
+                <div class="card">
+                    <div class="card-header" id="heading<%= i %>">
+                        <h5 class="mb-0">
+                            <button class="btn btn-link" data-toggle="collapse" data-target="#collapse<%= i %>"
+                                    aria-expanded="true" aria-controls="collapse<%= i %>">
+                                电影详情
+                            </button>
+                        </h5>
+                    </div>
+                    <div id="collapse<%= i %>" class="collapse" aria-labelledby="heading<%= i %>" data-parent="#accordion">
+                        <div class="card-body">
+                            <!--具体与电影相关的内容-->
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">导演:
+                                    <% for (let j = 0; j < movies[i].directors.length; j++) {
+                                    if (j === movies[i].directors.length - 1) { %>
+                                    <%= movies[i].directors[j] %>
+                                    <% } else { %>
+                                    <%= movies[i].directors[j] %> |
+                                    <% }
+                                    } %>
+                                </li>
+                                <li class="list-group-item">主演:
+                                    <%for(let j = 0; j < movies[i].casts.length;j++){%>
+                                    <% if(j == movies[i].casts.length - 1 ){%>
+                                    <%= movies[i].casts[j]%>
+                                    <%}else{%>
+                                    <%= movies[i].casts[j] %> |
+                                    <%}
+                                   }%>
+                                </li>
+                                <li class="list-group-item">类型:
+                                    <%for(let j = 0; j < movies[i].genres.length;j++){%>
+                                    <% if(j == movies[i].genres.length - 1 ){%>
+                                    <%= movies[i].genres[j]%>
+                                    <%}else{%>
+                                    <%= movies[i].genres[j] %> |
+                                    <%}
+                                   }%>
+                                </li>
+                                <li class="list-group-item">上映时间:<%= movies[i].releaseDate %> </li>
+                                <li class="list-group-item">评分:<%= movies[i].rating %></li>
+                                <li class="list-group-item">片长:<%= movies[i].runtime %></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">一天前更新</small>
+                </div>
+            </div>
+        </div>
+        <%}%>
+    </div>
+</div>
+</div>
+<!--创建模态框,实现视频播放-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" id="dplayer"></div>
+    </div>
+</div>
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.slim.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<script src="https://cdn.bootcss.com/dplayer/1.22.2/DPlayer.min.js"></script>
+<script>
+    $(function (){
+        //默认情况下dp视频播放器是没有的
+        var dp = null;
+        var lastVideo = "";
+        $('#myModal').on('hidden.bs.modal', function () {
+            //暂停播放器
+            dp.pause();
+        });
+        $(".card-img-top").click(function (){
+            let video = $(this).data("video");
+            let cover = $(this).data("cover");
+            let id = $(this).data("id");
+            if(!dp){
+                lastVideo = video;
+                dp = new DPlayer({
+                //存放播放器的容器
+                container: document.getElementById('dplayer'),
+                    video: {
+                    url: video,//播放资源的路径
+                        pic: cover,//视频的封面图
+                        thumbnails: cover //视频的缩略图
+                },
+                danmaku: {
+                    id:id,
+                        api:"<%= url %>/"
+                }
+            })
+            }else{
+                if(video !== lastVideo){
+                    dp.switchVideo({
+                        url: video,
+                        pic: cover,
+                        thumbnails: cover
+                    },
+                        {
+                        id:id,
+                        api:"<%= url %>/",
+                    });
+                    lastVideo = video;
+                }
+            }
+            //显示模态框
+            $('#myModal').modal('show')
+        });
+    })
+
+</script>
+</body>
+</html>
